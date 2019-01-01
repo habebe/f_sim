@@ -340,27 +340,3 @@ class DataStorage:
         if _id in self.dataset:
             del self.dataset[_id]
 
-if __name__ == "__main__":
-    storage = DataStorage("3599")
-    storage.insert_meta_data("hello2",[325,6,7,8])
-    data = storage.fetch_meta_data("hello2")
-    print(data)
-    storage.drop_meta_data("hello2")
-    data = storage.fetch_meta_data("hello2")
-    print(data)
-
-
-    result = storage.get_map_using_value(DataStorage.SECTOR,"Fake Data")
-
-   # def __init__(self,_id,_source,_type,_sector,_industry,_category,_start,_end,_description,_data):
-
-    data = data_object.Data("HELLO",None,None,None,None,None,datetime.datetime.today(),datetime.datetime.today(),"Some description",pandas.DataFrame({"A":[1,2,3,4]}))
-    storage.insert(data)
-
-    data = storage.fetch("HELLO")
-    print(data)
-
-    storage.drop("HELLO")
-    data = storage.fetch("HELLO")
-    print("NEW DATA" + str(data))
-
