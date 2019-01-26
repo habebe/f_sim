@@ -5,6 +5,15 @@ class Config:
         self.config = configparser.ConfigParser()
         self.config.read(filename)
 
+    def __repr__(self):
+        buffer = ""
+        for i in self.config.sections():
+            buffer += " {} (".format(i)
+            for j in self.config[i].keys():
+                buffer = buffer + " {0}={1}".format(j,self.config[i][j])
+            buffer += " )"   
+        return buffer
+
     def __get_value__(self,section_name,key_name):
         if section_name in self.config:
             section = self.config[section_name]
