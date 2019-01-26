@@ -1,7 +1,6 @@
-import data_simfin
 import pandas
 import functools
-import statement
+from model import *
 
 ASSETS = lambda x:  ((x.type & BalanceSheet.ASSET_TYPE) and not (x.type & BalanceSheet.TOTAL_TYPE))
 CURRENT_ASSETS = lambda x: ((x.type & BalanceSheet.CURRENT_TYPE) and (x.type & BalanceSheet.ASSET_TYPE) and not (x.type & BalanceSheet.TOTAL_TYPE))

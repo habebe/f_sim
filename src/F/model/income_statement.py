@@ -1,7 +1,6 @@
-import data_simfin
 import pandas
 import functools
-import statement
+from model import *
 
 REVENUE = lambda x:  (x.type & IncomeStatement.REVENUE_TYPE)
 INCOME = lambda x:  (x.type & IncomeStatement.INCOME_TYPE)

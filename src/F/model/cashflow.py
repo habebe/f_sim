@@ -1,7 +1,6 @@
-import data_simfin
 import pandas
 import functools
-import statement
+from model import *
 
 
 class Cashflow(statement.Statement):

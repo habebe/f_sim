@@ -1,9 +1,8 @@
-import data_simfin
 import pandas
 import functools
-import balance_sheet
-import income_statement
-import cashflow 
+import model.balance_sheet
+import model.income_statement
+import model.cashflow 
 
 class Company:
     def __init__(self, service, ticker, oid):

@@ -1,14 +1,9 @@
-import data_simfin
 import pandas
 import functools
-import balance_sheet
-import income_statement
-import cashflow 
-
 import data_service
 import model
 
-class F:
+class Service:
     NoneType = type(None)
     StrType = type("")
     IntType = type(0)
