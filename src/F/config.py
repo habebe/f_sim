@@ -21,6 +21,9 @@ class Config:
                 return section[key_name]
         return None
 
+    def simfin_storage(self):
+        return self.__get_value__("simfin","storage")
+
     def simfin_apikey(self):
         return self.__get_value__("simfin","api-key")
 

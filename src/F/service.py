@@ -1,7 +1,8 @@
 import pandas
 import functools
-import data_service
-import model
+import data_service.simfin
+import data_service.storage
+import model.company
 
 class Service:
     NoneType = type(None)
@@ -10,23 +11,24 @@ class Service:
 
     def __init__(self,config):
         self.__config = config
+        self.__storage = data_service.storage.Storage(self)
         self.__simfin = data_service.simfin.DataService(self)
         self.__entities = None
 
     def config(self):
         return self.__config
 
+    def storage(self):
+        return self.__storage
+
     def debug_log(self,content):
         print(content)
 
     def entities(self, refresh=False):
-        if refresh or (type(self.__entities) == self.NoneType):
-            self.__entities = self.__storage.entities()
-        return self.__entities
-
+        return self.__simfin.entities(refresh)
 
     def match_id(self, ticker):
-        es = self.entities()
+        es = self.__simfin.entities(False)
         result = es.loc[es.ticker.str.match(
             ticker.strip(), na=False, case=False)]
         if result.size:
@@ -38,11 +40,11 @@ class Service:
 
     def get_oid(self, ticker):
         oid = ticker
-        if type(ticker) == self.StrType:
+        if type(ticker) == str:
             ticker = self.match_exact_id(ticker)
         if type(ticker) == pandas.core.frame.DataFrame:
             oid = int(ticker.index[0])
-        if type(oid) == self.IntType:
+        if type(oid) == int:
             return oid
         return None
 
@@ -50,5 +52,5 @@ class Service:
         oid = self.get_oid(ticker)
         company = None
         if type(oid) != self.NoneType:
-            company = Company(self, ticker, oid)
+            company = model.company.Company(self, ticker, oid)
         return company

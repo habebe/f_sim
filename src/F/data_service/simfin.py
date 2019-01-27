@@ -5,7 +5,8 @@ import mysql.connector
 import datetime
 import json
 import pickle
-
+import data_service.base_dataservice as base_dataservice
+import datetime
 class URL:
     ALL_ENTITIES = "https://simfin.com/api/v1/info/all-entities"
     GENERAL = "https://simfin.com/api/v1/companies/id/{0}"
@@ -15,99 +16,49 @@ class URL:
     TTM_RATIO = "https://simfin.com/api/v1/companies/id/{0}/ratios"
     AGGREGATED_SHARES = "https://simfin.com/api/v1/companies/id/{0}/shares/aggregated"
 
-class DataService:
+class DataService(base_dataservice.BaseDataService):
+    TABLE_ENTITIES = "{0}.entities"
+    
     def __init__(self,service):
-        self.service = service
-        self.api_key = self.service.config().simfin_apikey()
+        base_dataservice.BaseDataService.__init__(self,service.config().simfin_storage())
+        self.__service = service
+        self.__table_name_entities = None
+        self.__entities = None
+        
+        self.__api_key = self.__service.config().simfin_apikey()
+        self.add_field(self.table_name_entities(),base_dataservice.FieldDescription("date","DATE"))
+        self.add_field(self.table_name_entities(),base_dataservice.FieldDescription("data","LONGBLOB"))
+        self.__service.storage().initialize_datasource(self)
         pass
 
-    def request(self,request_type,params = None):
+    def table_name_entities(self):
+        if self.__table_name_entities == None:
+            self.__table_name_entities =  self.TABLE_ENTITIES.format(self.__service.config().simfin_storage())
+        return self.__table_name_entities
+
+    def __request(self,request_type,params = None):
         if params == None:
             params = {}
-        params["api-key"] = self.api_key
-        self.service.debug_log("simfin request:{}".format(request_type))
+        params["api-key"] = self.__api_key
+        self.__service.debug_log("simfin request:{}".format(request_type))
         response = requests.get(request_type,params=params)
         json_data = response.json()
         if 'error' in json_data:
             raise Exception("simfin exception {} ".format(json_data['error']))
-        return json_data
+        return response.text
 
-    def all_entities(self):
-        return self.request(URL.ALL_ENTITIES)
-
-    def company_info(self,sim_id):
-        return self.request(URL.GENERAL.format(sim_id))
-
-    def statement_list(self,sim_id):
-        print("Fetch statement list {}".format(sim_id))
-        return self.request(URL.STATEMENT_LIST.format(sim_id))
-
-    def ttm_ratio(self,sim_id):
-        return self.request(URL.TTM_RATIO.format(sim_id))
-
-    def statement_std_pl(self,sim_id,fyear,ptype="TTM"):
-        return self.generic_statement(
-            sim_id,
-            URL.STATEMENT_STD,
-            'pl',
-            fyear,
-            ptype
-        )
-
-    def statement_org_pl(self,sim_id,fyear,ptype="TTM"):
-        return self.generic_statement(
-            sim_id,
-            URL.STATEMENT_ORG,
-            'pl',
-            fyear,
-            ptype
-        )
-
-    def statement_std_bs(self,sim_id,fyear,ptype="TTM"):
-        return self.generic_statement(
-            sim_id,
-            URL.STATEMENT_STD,
-            'bs',
-            fyear,
-            ptype
-        )
-
-    def statement_org_bs(self,sim_id,fyear,ptype="TTM"):
-        return self.generic_statement(
-            sim_id,
-            URL.STATEMENT_ORG,
-            'bs',
-            fyear,
-            ptype
-        )
-
-    def statement_org_cf(self,sim_id,fyear,ptype="TTM"):
-        return self.generic_statement(
-            sim_id,
-            URL.STATEMENT_ORG,
-            'cf',
-            fyear,
-            ptype
-        )
-
-    def statement_std_cf(self,sim_id,fyear,ptype="TTM"):
-        return self.generic_statement(
-            sim_id,
-            URL.STATEMENT_STD,
-            'cf',
-            fyear,
-            ptype
-        )
-
-    def generic_statement(self,sim_id,request_type,stype,fyear,ptype):
-        request_type = request_type.format(sim_id)
-        params = {
-            'stype':stype,
-            'ptype':ptype,
-            'fyear':fyear
-        }
-        return self.request(request_type,params)
-
-    def aggregated_shares(self,oid):
-        return self.request(URL.AGGREGATED_SHARES.format(oid))
-
+    def entities(self,refresh=False):
+        if (refresh == True):
+            response = self.__request(URL.ALL_ENTITIES)
+            data = {"date":datetime.datetime.now(),'data':response}
+            self.__service.storage().persist(self,self.table_name_entities(),data)
+            self.__entities = json.loads(response)
+            self.__entities = pandas.DataFrame(self.__entities)
+            #self.__entities.set_index("simId",inplace=True)
+        elif(type(self.__entities) == type(None)):
+            response = self.__service.storage().query(self.table_name_entities(),select="data",where=None,limit=1)
+            if (response != None) and (len(response) > 0):
+                self.__entities = json.loads(response[0][0])   
+                self.__entities = pandas.DataFrame(self.__entities)
+                #self.__entities.set_index("simId",inplace=True)
+        return self.__entities
