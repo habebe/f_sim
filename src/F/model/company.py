@@ -9,9 +9,9 @@ class Company:
         self.__ticker = ticker
         self.__oid = oid
         self.__service = service
-        self.balance_sheet = None
-        self.income_statement = None
-        self.cashflow = None
+        self.__balance_sheet = None
+        self.__income_statement = None
+        self.__cashflow = None
         self.__info = None
         self.__ratios = None
 
@@ -26,27 +26,72 @@ class Company:
             self.__ratios.set_index("indicatorName",inplace=True)
         return self.__ratios
 
-    def statement_list(self,stmt_type):
-        return self.__service.simfin().statement_list(stmt_type)
+    def statement_list(self,stmt_type,not_calculated_only=True,fy=True,quarter=-1):
+        listing = self.__service.simfin().statement_list(self.__oid,stmt_type)
+        if type(listing) != type(None):
+            if not_calculated_only == True:
+                listing = listing.loc[listing.calculated == False]
+            if fy == True:
+                listing = listing.loc[listing.period.str.match("FY", na=False)]
+            elif quarter == 0:
+                quarter = "^Q"
+                listing = listing.loc[listing.period.str.match(quarter, na=False)]
+            elif quarter != -1:
+                quarter = "Q{}".format(quarter)
+                listing = listing.loc[listing.period.str.match(quarter, na=False)]
+        return listing
 
-    def cf(self):
-        if self.cashflow == None:
-            data = self.service.get_statement(self.ticker, "cf",1e-6,quarter=-1,fy=True,prefix=False)
-            self.cashflow = cashflow.Cashflow(self,data)
-        return self.cashflow
-
-    def bs(self):
-        if self.balance_sheet == None:
-            data = self.service.get_statement(self.ticker, "bs",1e-6,quarter=4,fy=False,prefix=False)
-            self.balance_sheet = balance_sheet.BalanceSheet(self,data)
-        return self.balance_sheet
-
+    def __statment(self,stmt_lists,stype,factor,prefix):
+        stmt_lists = stmt_lists[::-1]
+        data_frame = None
+        for stmt_list in stmt_lists.iterrows():
+            fyear = stmt_list[1].fyear
+            ptype = stmt_list[1].period
+            values = self.__service.simfin().statement(self.__oid,stype,ptype,fyear,refresh=False,raw=True)
+            m = {}
+            values = values["values"]
+            for i in values:
+                _n = i["standardisedName"]
+                _v = i["valueChosen"]
+                if _v == None:
+                    _v = 0
+                else:
+                    _v = float(_v)*factor
+                m[_n] = _v
+            results = None
+            if prefix:
+                results = {"{0}.{1}".format(ptype,fyear):m}    
+            else:
+                results = {int(fyear):m}  
+            df = pandas.DataFrame(results)
+            if type(data_frame) == type(None):
+                data_frame = df
+            else:
+                data_frame = data_frame.join(df)
+        data_frame = data_frame.transpose()
+        return data_frame
 
     def pl(self):
-        if self.income_statement == None:
-            data = self.service.get_statement(self.ticker, "pl",1e-6,quarter=-1,fy=True,prefix=False)
-            self.income_statement = income_statement.IncomeStatement(self,data)
-        return self.income_statement
+        if self.__income_statement == None:
+            stmt_lists = self.statement_list("pl",True,True,-1)
+            data = self.__statment(stmt_lists,"pl",1e-6,False)
+            self.__income_statement = model.income_statement.IncomeStatement(self,data)
+        return self.__income_statement
+
+
+    def cf(self):
+        if self.__cashflow == None:
+            stmt_lists = self.statement_list("cf",True,True,-1)
+            data = self.__statment(stmt_lists,"cf",1e-6,False)
+            self.__cashflow = model.cashflow.Cashflow(self,data)
+        return self.__cashflow
+
+    def bs(self):
+        if self.__balance_sheet == None:
+            stmt_lists = self.statement_list("bs",True,False,4)
+            data = self.__statment(stmt_lists,"bs",1e-6,False)
+            self.__balance_sheet = model.cashflow.Cashflow(self,data)
+        return self.__balance_sheet
 
     def averaged(self,data,name):
         previous = None

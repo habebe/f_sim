@@ -49,6 +49,7 @@ class Storage:
                 column_names += ","
                 column_values += ","
                 update_values += ","
+        
         statement = '''INSERT INTO {0}({1}) VALUES({2}) ON DUPLICATE KEY UPDATE {3}'''.format(table_name,column_names,column_values,update_values)
         cursor = self.__connection.cursor(buffered=True)
         cursor.execute(statement,data)
