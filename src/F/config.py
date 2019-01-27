@@ -27,6 +27,9 @@ class Config:
     def simfin_apikey(self):
         return self.__get_value__("simfin","api-key")
 
+    def misc_storage(self):
+        return self.__get_value__("misc","storage")
+
     def storage_password(self):
         return self.__get_value__("storage","password")
     

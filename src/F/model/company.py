@@ -6,12 +6,28 @@ import model.cashflow
 
 class Company:
     def __init__(self, service, ticker, oid):
-        self.ticker = ticker
-        self.oid = oid
-        self.service = service
+        self.__ticker = ticker
+        self.__oid = oid
+        self.__service = service
         self.balance_sheet = None
         self.income_statement = None
         self.cashflow = None
+        self.__info = None
+        self.__ratios = None
+
+    def info(self):
+        if type(self.__info) == type(None):
+            self.__info = self.__service.simfin().company_data(self.__oid)
+        return self.__info
+
+    def ratios(self):
+        if type(self.__ratios) == type(None):
+            self.__ratios = self.__service.simfin().ratios(self.__oid)[["indicatorName","value"]]
+            self.__ratios.set_index("indicatorName",inplace=True)
+        return self.__ratios
+
+    def statement_list(self,stmt_type):
+        return self.__service.simfin().statement_list(stmt_type)
 
     def cf(self):
         if self.cashflow == None:
