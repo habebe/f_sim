@@ -4,6 +4,7 @@ import data_service.simfin
 import data_service.misc
 import data_service.storage
 import model.company
+import model.company_set
 
 class Service:
     NoneType = type(None)
@@ -32,7 +33,7 @@ class Service:
     def debug_log(self,content):
         print(content)
 
-    def earning_report_dates(self,refresh=False,release_date=None,append_simid=True):
+    def earning_report_dates_raw(self,refresh=False,release_date=None,append_simid=True):
         result = self.__misc.earning_report_dates(refresh)
         if release_date != None:
             result = result.loc[result.release_date == release_date]
@@ -45,7 +46,10 @@ class Service:
             result = result.loc[result.simid > 0]
         return result
 
-
+    def earning_report_dates(self,refresh=False,release_date=None,append_simid=True):
+        result = self.earning_report_dates_raw(refresh,release_date,append_simid)
+        return model.company_set.CompanySet(self,result)
+     
     def entities(self, refresh=False):
         return self.__simfin.entities(refresh)
 
@@ -74,9 +78,16 @@ class Service:
             return int(oid)
         return None
 
+    def get_ticker(self,oid):
+        e = self.simfin().entities()
+        r = e.loc[e.simId == int(oid)]["ticker"]
+        return r[r.index[0]]
+
     def get_company(self, ticker):
         oid = self.get_oid(ticker)
         company = None
         if type(oid) != self.NoneType:
+            if type(ticker) != str:
+                ticker = self.get_ticker(oid)
             company = model.company.Company(self, ticker, oid)
         return company

@@ -15,6 +15,9 @@ class Company:
         self.__info = None
         self.__ratios = None
 
+    def ticker(self):
+        return self.__ticker
+
     def info(self):
         if type(self.__info) == type(None):
             self.__info = self.__service.simfin().company_data(self.__oid)
@@ -28,7 +31,7 @@ class Company:
 
     def statement_list(self,stmt_type,not_calculated_only=True,fy=True,quarter=-1):
         listing = self.__service.simfin().statement_list(self.__oid,stmt_type)
-        if type(listing) != type(None):
+        if (type(listing) != type(None)) and listing.size > 0:
             if not_calculated_only == True:
                 listing = listing.loc[listing.calculated == False]
             if fy == True:
@@ -68,14 +71,16 @@ class Company:
                 data_frame = df
             else:
                 data_frame = data_frame.join(df)
-        data_frame = data_frame.transpose()
+        if type(data_frame) != type(None):
+            data_frame = data_frame.transpose()
         return data_frame
 
     def pl(self):
         if self.__income_statement == None:
             stmt_lists = self.statement_list("pl",True,True,-1)
             data = self.__statment(stmt_lists,"pl",1e-6,False)
-            self.__income_statement = model.income_statement.IncomeStatement(self,data)
+            if type(data) != type(None):
+                self.__income_statement = model.income_statement.IncomeStatement(self,data)
         return self.__income_statement
 
 
@@ -83,14 +88,16 @@ class Company:
         if self.__cashflow == None:
             stmt_lists = self.statement_list("cf",True,True,-1)
             data = self.__statment(stmt_lists,"cf",1e-6,False)
-            self.__cashflow = model.cashflow.Cashflow(self,data)
+            if type(data) != type(None):
+                self.__cashflow = model.cashflow.Cashflow(self,data)
         return self.__cashflow
 
     def bs(self):
         if self.__balance_sheet == None:
             stmt_lists = self.statement_list("bs",True,False,4)
             data = self.__statment(stmt_lists,"bs",1e-6,False)
-            self.__balance_sheet = model.cashflow.Cashflow(self,data)
+            if type(data) != type(None):
+                self.__balance_sheet = model.cashflow.Cashflow(self,data)
         return self.__balance_sheet
 
     def averaged(self,data,name):

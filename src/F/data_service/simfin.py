@@ -128,7 +128,7 @@ class DataService(base_dataservice.BaseDataService):
             result = json.loads(response)
             result = pandas.DataFrame(result)
         elif(type(result) == type(None)):
-            response = self.__service.storage().query(self.table_name_ttm_ratio(),select="data",where=None,limit=1)
+            response = self.__service.storage().query(self.table_name_ttm_ratio(),select="data",where="simId={0}".format(simId),limit=1)
             if (response != None) and (len(response) > 0):
                 result = json.loads(response[0][0])   
                 result = pandas.DataFrame(result)
@@ -150,7 +150,7 @@ class DataService(base_dataservice.BaseDataService):
             if raw == False:
                 result = pandas.DataFrame(result["values"])
         elif(type(result) == type(None)):
-            response = self.__service.storage().query(self.table_name_statement(),select="data",where="stype='{0}' AND ptype='{1}' AND fyear={2}".format(stype,ptype,fyear),limit=1)
+            response = self.__service.storage().query(self.table_name_statement(),select="data",where="simId={0} AND stype='{1}' AND ptype='{2}' AND fyear={3}".format(simId,stype,ptype,fyear),limit=1)
             if (response != None) and (len(response) > 0):
                 result = json.loads(response[0][0])   
                 if raw == False:
@@ -173,7 +173,7 @@ class DataService(base_dataservice.BaseDataService):
             result = json.loads(response)
             result = pandas.DataFrame(result[stype])
         elif(type(result) == type(None)):
-            response = self.__service.storage().query(self.table_name_statement_list(),select="data",where=None,limit=1)
+            response = self.__service.storage().query(self.table_name_statement_list(),select="data",where="simId={0}".format(simId),limit=1)
             if (response != None) and (len(response) > 0):
                 result = json.loads(response[0][0])   
                 result = pandas.DataFrame(result[stype])
